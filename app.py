@@ -24,7 +24,7 @@ def main():
     st.title("Pickleball Team Matcher")
 
     # add expander with about section
-    with st.expander("About"):
+    with st.expander("About", expanded=False):
         st.write("""
         Upload a CSV file containing player names, their DUPR ratings, and their gender,
         or enter the player data manually. The app will pair players into teams of two,
@@ -49,7 +49,7 @@ def main():
     else:
         # Enter data manually
         st.write("Enter player details:")
-        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1)
+        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players", value=4)
         manual_data = []
         for i in range(int(num_players)):
             st.write(f"**Player {i+1}**")
