@@ -22,10 +22,13 @@ from pulp import pulp, LpProblem, LpMinimize, LpVariable, lpSum, LpBinary, value
 
 def main():
     st.title("Pickleball Team Matcher")
-    st.write("""
-    Upload a CSV file containing player names, their DUPR ratings, and their gender,
-    or enter the player data manually. The app will pair players into teams of two,
-    minimizing the difference in team rating sums.
+
+    # add expander with about section
+    with st.expander("About"):
+        st.write("""
+        Upload a CSV file containing player names, their DUPR ratings, and their gender,
+        or enter the player data manually. The app will pair players into teams of two,
+        minimizing the difference in team rating sums.
     
     Uses the PuLP library for linear programming optimization.
     
