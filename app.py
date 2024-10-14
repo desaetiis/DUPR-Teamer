@@ -148,7 +148,7 @@ def display_dataframe_in_expander(expander, df):
 def main():
     st.title("Pickleball Team Matcher")
 
-    with st.expander("About", expanded=False):
+    with st.expander("**About**", expanded=False):
         st.write("""
         Upload a CSV file containing player names, their DUPR ratings, and their gender,
         or enter the player data manually. The app will pair players into teams of two,
@@ -158,6 +158,7 @@ def main():
 
     `Author: Felix Vadan`
     """)
+    st.markdown("---")
 
     data_option = st.selectbox(
         "How would you like to provide player data?",
@@ -168,15 +169,13 @@ def main():
         uploaded_file = st.file_uploader("Upload CSV", type="csv")
         if uploaded_file:
             players_df = pd.read_csv(uploaded_file)
-            display_dataframe_in_expander(st.expander("Uploaded Data"), players_df)
+            display_dataframe_in_expander(st.expander("**Uploaded Data**"), players_df)
 
     elif data_option == "Use Sample Data":
         players_df = get_players_from_db(sample_data=True)
-        display_dataframe_in_expander(st.expander("Sample Data"), players_df)
+        display_dataframe_in_expander(st.expander("**Sample Data**"), players_df)
     else:
         with st.expander(f"**Enter player details:**", expanded=True):
-            # sample_data = [
-            # st.write(f"**Enter player details:**")
             num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players",
                                           value=4)
             manual_data = []
@@ -190,8 +189,11 @@ def main():
         if st.button("Save Players"):
             insert_players_into_db(manual_data)
             st.success("Players saved to database.")
+
         players_df = pd.DataFrame(manual_data, columns=["name", "gender", "dupr_rating"])
-        st.dataframe(players_df)
+        display_dataframe_in_expander(st.expander("**Saved Players**"), players_df)
+
+    st.markdown("---")
 
     if 'players_df' in locals():
         pairing_option = st.selectbox(
