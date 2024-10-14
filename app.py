@@ -152,7 +152,8 @@ def main():
         st.write("""
         Upload a CSV file containing player names, their DUPR ratings, and their gender,
         or enter the player data manually. The app will pair players into teams of two,
-        minimizing the difference in team rating sums.
+        minimizing the difference in team rating sums. This should help create balanced teams
+        for pickleball rec matches.
 
     Uses the PuLP library for linear programming optimization.
 
