@@ -218,6 +218,10 @@ def main():
                          type='primary'):
                 teams = generate_teams(players_df, pairing_option)
 
+                if pairing_option == "Gender":
+                    # sort result by 'Gender Composition' column
+                    teams = teams.sort_values(by=['Gender Composition'])
+
                 if teams is not None:
                     st.write("**Optimal Teams:**")
                     st.dataframe(teams)
