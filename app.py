@@ -1,89 +1,17 @@
 import streamlit as st
 import pandas as pd
-import sys
-from io import StringIO
+import io
 from pulp import pulp, LpProblem, LpMinimize, LpVariable, lpSum, LpBinary, value
+import contextlib
 
-# command to create the virtual environment
-# python -m venv venv
-
-# command to activate the virtual environment
-# .\venv\Scripts\Activate
-
-# command to create requirements.txt file
-# pip freeze > requirements.txt
-
-# command to install the requirements.txt file
-# pip install -r requirements.txt
-
-# command to run the app
-# streamlit run app.py
-
-
-def main():
-    st.title("Pickleball Team Matcher")
-
-    # add expander with about section
-    with st.expander("About", expanded=False):
-        st.write("""
-        Upload a CSV file containing player names, their DUPR ratings, and their gender,
-        or enter the player data manually. The app will pair players into teams of two,
-        minimizing the difference in team rating sums.
-    
-    Uses the PuLP library for linear programming optimization.
-    
-    Author: Felix Vadan
-    """)
-
-    # Option to upload CSV or enter data manually
-    data_option = st.selectbox(
-        "How would you like to provide player data?",
-        ("Enter Data Manually", "Upload CSV File")
-    )
-
-    if data_option == "Upload CSV File":
-        uploaded_file = st.file_uploader("Upload CSV", type="csv")
-        if uploaded_file:
-            players_df = pd.read_csv(uploaded_file)
-            st.dataframe(players_df)
-    else:
-        # Enter data manually
-        st.write("Enter player details:")
-        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players", value=4)
-        manual_data = []
-        for i in range(int(num_players)):
-            st.write(f"**Player {i+1}**")
-            name = st.text_input(f"Name of Player {i+1}", key=f"name_{i}")
-            rating = st.number_input(f"DUPR Rating of Player {i+1}", min_value=0.0, step=0.01, key=f"rating_{i}")
-            gender = st.selectbox(f"Gender of Player {i+1}", options=["Male", "Female"], key=f"gender_{i}")
-            manual_data.append({"Name": name, "DUPR_Rating": rating, "Gender": gender})
-
-        # Create DataFrame from manual input
-        players_df = pd.DataFrame(manual_data)
-        st.dataframe(players_df)
-
-    if 'players_df' in locals():
-        # Add selection for team pairing option
-        pairing_option = st.selectbox(
-            "Select Team Pairing Option",
-            ("Any Gender", "Mixed", "Gender")
-        )
-
-        if len(players_df) % 2 != 0:
-            st.error("The number of players must be even.")
-        else:
-            if st.button("Generate Teams"):
-                teams = generate_teams(players_df, pairing_option)
-
-                
-                if teams is not None:
-                    st.write("**Optimal Teams:**")
-                    st.table(teams)
-                else:
-                    st.error("An error occurred while generating teams.")
 
 def generate_teams(players_df, pairing_option):
-
+    """
+    Generate teams of two players based on the given player data and pairing option.
+    :param players_df: pandas DataFrame containing player data
+    :param pairing_option: str, team pairing option
+    :return: pandas DataFrame with the optimal teams
+    """
     players = players_df['Name'].tolist()
     ratings = dict(zip(players_df['Name'], players_df['DUPR_Rating']))
     genders = dict(zip(players_df['Name'], players_df['Gender']))
@@ -138,6 +66,10 @@ def generate_teams(players_df, pairing_option):
         prob += max_team_sum >= team_sum * pair_vars[pair]
         prob += min_team_sum <= team_sum * pair_vars[pair] + 1000 * (1 - pair_vars[pair])  # Big M method
 
+    #  The Big M method is a technique used to solve linear programming problems with constraints that are
+    #  greater than or equal to zero. It's a modified version of the simplex algorithm that uses artificial
+    #  variables and a large penalty value to find a solution
+
     # Objective function
     prob += max_team_sum - min_team_sum
 
@@ -149,16 +81,13 @@ def generate_teams(players_df, pairing_option):
     prob += lpSum(pair_vars[pair] for pair in pairs) == total_teams
 
     # Solve the problem and capture solver output
-    import contextlib
-    import io
-
     solver_output = io.StringIO()
     with contextlib.redirect_stdout(solver_output):
         result = prob.solve(pulp.PULP_CBC_CMD(msg=True))
 
-    # Display the solver output in the Streamlit app
-    st.text("Solver Output:")
-    st.code(solver_output.getvalue())
+    # Display the solver output in the Streamlit app (optional)
+    # st.text("Solver Output:")
+    # st.code(solver_output.getvalue())
 
     if result != 1:
         st.error("An error occurred while solving the optimization problem.")
@@ -179,6 +108,78 @@ def generate_teams(players_df, pairing_option):
     teams_df = pd.DataFrame(team_list)
     teams_df = teams_df.sort_values(by='Team Rating Sum', ascending=False)
     return teams_df
+
+
+def main():
+    st.title("Pickleball Team Matcher")
+
+    # add expander with about section
+    with st.expander("About", expanded=False):
+        st.write("""
+        Upload a CSV file containing player names, their DUPR ratings, and their gender,
+        or enter the player data manually. The app will pair players into teams of two,
+        minimizing the difference in team rating sums.
+
+    Uses the PuLP library for linear programming optimization.
+
+    `Author: Felix Vadan`
+    """)
+
+    # Option to upload CSV, enter data manually, use sample data, or search DUPR
+    data_option = st.selectbox(
+        "How would you like to provide player data?",
+        ("Enter Data Manually", "Upload CSV File", "Use Sample Data")
+    )
+
+    if data_option == "Upload CSV File":
+        uploaded_file = st.file_uploader("Upload CSV", type="csv")
+        if uploaded_file:
+            players_df = pd.read_csv(uploaded_file)
+            st.dataframe(players_df)
+    elif data_option == "Use Sample Data":
+        sample_data = {
+            "Name": ["Mike", "Dan", "Kim", "Ashley", "Janice", "Tim", "Kam", "Alex"],
+            "Gender": ["Male", "Male", "Female", "Female", "Female", "Male", "Female", "Male"],
+            "DUPR_Rating": [4.722, 4.478, 4.963, 4.914, 4.920, 4.622, 4.434, 5.160]
+        }
+        players_df = pd.DataFrame(sample_data)
+        st.dataframe(players_df)
+
+    else:
+        # Enter data manually
+        st.write(f"**Enter player details:**")
+        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players", value=4)
+        manual_data = []
+        for i in range(int(num_players)):
+            st.write(f"**Player {i+1}**")
+            name = st.text_input(f"Name of Player {i+1}", key=f"name_{i}")
+            rating = st.number_input(f"DUPR Rating of Player {i+1}", min_value=0.0, step=0.01, key=f"rating_{i}")
+            gender = st.selectbox(f"Gender of Player {i+1}", options=["Male", "Female"], key=f"gender_{i}")
+            manual_data.append({"Name": name, "DUPR_Rating": rating, "Gender": gender})
+
+        # Create DataFrame from manual input
+        players_df = pd.DataFrame(manual_data)
+        st.dataframe(players_df)
+
+    if 'players_df' in locals():
+        # Add selection for team pairing option
+        pairing_option = st.selectbox(
+            "Select Team Pairing Option",
+            ("Any Gender", "Mixed", "Gender")
+        )
+
+        if len(players_df) % 2 != 0:
+            st.error("The number of players must be even.")
+        else:
+            if st.button("Generate Teams"):
+                teams = generate_teams(players_df, pairing_option)
+
+                if teams is not None:
+                    st.write("**Optimal Teams:**")
+                    st.dataframe(teams)
+                else:
+                    st.error("An error occurred while generating teams.")
+
 
 if __name__ == "__main__":
     main()
