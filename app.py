@@ -128,9 +128,13 @@ def generate_teams(players_df, pairing_option):
     return teams_df
 
 
-def get_players_from_db():
+def get_players_from_db(sample_data):
     conn = sqlite3.connect('players.db')
-    query = "SELECT name, gender, dupr_rating FROM players"
+    if sample_data:
+        tbl = "sample_players"
+    else:
+        tbl = "players"
+    query = f"SELECT name, gender, dupr_rating FROM {tbl}"
     players_df = pd.read_sql_query(query, conn)
     conn.close()
     return players_df
@@ -167,25 +171,27 @@ def main():
             display_dataframe_in_expander(st.expander("Uploaded Data"), players_df)
 
     elif data_option == "Use Sample Data":
-        players_df = get_players_from_db()
+        players_df = get_players_from_db(sample_data=True)
         display_dataframe_in_expander(st.expander("Sample Data"), players_df)
     else:
-        st.write(f"**Enter player details:**")
-        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players",
-                                      value=4)
-        manual_data = []
-        for i in range(int(num_players)):
-            st.write(f"**Player {i + 1}**")
-            name = st.text_input(f"Name of Player {i + 1}", key=f"name_{i}")
-            rating = st.number_input(f"DUPR Rating of Player {i + 1}", min_value=0.0, step=0.01, key=f"rating_{i}")
-            gender = st.selectbox(f"Gender of Player {i + 1}", options=["Male", "Female"], key=f"gender_{i}")
-            manual_data.append((name, gender, rating))
+        with st.expander(f"**Enter player details:**", expanded=True):
+            # sample_data = [
+            # st.write(f"**Enter player details:**")
+            num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players",
+                                          value=4)
+            manual_data = []
+            for i in range(int(num_players)):
+                st.write(f"**Player {i + 1}**")
+                name = st.text_input(f"Name of Player {i + 1}", key=f"name_{i}")
+                rating = st.number_input(f"DUPR Rating of Player {i + 1}", min_value=0.0, step=0.01, key=f"rating_{i}")
+                gender = st.selectbox(f"Gender of Player {i + 1}", options=["Male", "Female"], key=f"gender_{i}")
+                manual_data.append((name, gender, rating))
 
         if st.button("Save Players"):
             insert_players_into_db(manual_data)
             st.success("Players saved to database.")
-            players_df = pd.DataFrame(manual_data, columns=["Name", "Gender", "DUPR_Rating"])
-            st.dataframe(players_df)
+        players_df = pd.DataFrame(manual_data, columns=["name", "gender", "dupr_rating"])
+        st.dataframe(players_df)
 
     if 'players_df' in locals():
         pairing_option = st.selectbox(
