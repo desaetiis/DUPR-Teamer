@@ -148,17 +148,21 @@ def display_dataframe_in_expander(expander, df):
 def main():
     st.title("Pickleball Team Matcher")
 
-    with st.expander("**About**", expanded=False):
-        st.write("""
+    with st.expander(":blue[**About**]", expanded=False):
+        st.info("This app helps create balanced pickleball teams based on player DUPR ratings.")
+        st.markdown("""
+        
         Upload a CSV file containing player names, their DUPR ratings, and their gender,
         or enter the player data manually. The app will pair players into teams of two,
-        minimizing the difference in team rating sums. This should help create balanced teams
-        for pickleball rec matches.
-
-    Uses the PuLP library for linear programming optimization.
-
-    `Author: Felix Vadan`
-    """)
+        minimizing the difference in team rating sums. You can choose from three pairing options:
+        - **Any Gender**: Pairs can be of any gender.
+        - **Mixed**: Pairs will be mixed gender.
+        - **Gender**: Pairs will be of the same gender.
+        
+        *Uses the PuLP library for linear programming optimization.*
+        
+        :blue[Author: Felix Vadan]
+        """)
     st.markdown("---")
 
     data_option = st.selectbox(
@@ -205,7 +209,10 @@ def main():
         if len(players_df) % 2 != 0:
             st.error("The number of players must be even.")
         else:
-            if st.button("Generate Teams"):
+            if st.button("Generate Teams",
+                         key="generate_teams",
+                         help="Click to generate optimal teams.",
+                         type='primary'):
                 teams = generate_teams(players_df, pairing_option)
 
                 if teams is not None:
