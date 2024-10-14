@@ -3,6 +3,24 @@ import pandas as pd
 import io
 from pulp import pulp, LpProblem, LpMinimize, LpVariable, lpSum, LpBinary, value
 import contextlib
+import sqlite3
+
+
+def insert_players_into_db(players):
+    conn = sqlite3.connect('players.db')
+    cursor = conn.cursor()
+
+    # Clear existing data
+    cursor.execute('DELETE FROM players')
+
+    # Insert new data
+    cursor.executemany('''
+    INSERT INTO players (name, gender, dupr_rating)
+    VALUES (?, ?, ?)
+    ''', players)
+
+    conn.commit()
+    conn.close()
 
 
 def generate_teams(players_df, pairing_option):
@@ -12,15 +30,15 @@ def generate_teams(players_df, pairing_option):
     :param pairing_option: str, team pairing option
     :return: pandas DataFrame with the optimal teams
     """
-    players = players_df['Name'].tolist()
-    ratings = dict(zip(players_df['Name'], players_df['DUPR_Rating']))
-    genders = dict(zip(players_df['Name'], players_df['Gender']))
+    players = players_df['name'].tolist()
+    ratings = dict(zip(players_df['name'], players_df['dupr_rating']))
+    genders = dict(zip(players_df['name'], players_df['gender']))
 
     # Generate all possible pairs based on the pairing option
     pairs = []
     if pairing_option == "Any Gender":
         for i in range(len(players)):
-            for j in range(i+1, len(players)):
+            for j in range(i + 1, len(players)):
                 pairs.append((players[i], players[j]))
     elif pairing_option == "Mixed":
         males = [p for p in players if genders[p].lower() == 'male']
@@ -33,11 +51,11 @@ def generate_teams(players_df, pairing_option):
         female_players = [p for p in players if genders[p].lower() == 'female']
         # Male-male pairs
         for i in range(len(male_players)):
-            for j in range(i+1, len(male_players)):
+            for j in range(i + 1, len(male_players)):
                 pairs.append((male_players[i], male_players[j]))
         # Female-female pairs
         for i in range(len(female_players)):
-            for j in range(i+1, len(female_players)):
+            for j in range(i + 1, len(female_players)):
                 pairs.append((female_players[i], female_players[j]))
     else:
         return None  # Invalid option
@@ -110,10 +128,22 @@ def generate_teams(players_df, pairing_option):
     return teams_df
 
 
+def get_players_from_db():
+    conn = sqlite3.connect('players.db')
+    query = "SELECT name, gender, dupr_rating FROM players"
+    players_df = pd.read_sql_query(query, conn)
+    conn.close()
+    return players_df
+
+
+def display_dataframe_in_expander(expander, df):
+    with expander:
+        st.dataframe(df)
+
+
 def main():
     st.title("Pickleball Team Matcher")
 
-    # add expander with about section
     with st.expander("About", expanded=False):
         st.write("""
         Upload a CSV file containing player names, their DUPR ratings, and their gender,
@@ -125,7 +155,6 @@ def main():
     `Author: Felix Vadan`
     """)
 
-    # Option to upload CSV, enter data manually, use sample data, or search DUPR
     data_option = st.selectbox(
         "How would you like to provide player data?",
         ("Enter Data Manually", "Upload CSV File", "Use Sample Data")
@@ -135,34 +164,30 @@ def main():
         uploaded_file = st.file_uploader("Upload CSV", type="csv")
         if uploaded_file:
             players_df = pd.read_csv(uploaded_file)
-            st.dataframe(players_df)
-    elif data_option == "Use Sample Data":
-        sample_data = {
-            "Name": ["Mike", "Dan", "Kim", "Ashley", "Janice", "Tim", "Kam", "Alex"],
-            "Gender": ["Male", "Male", "Female", "Female", "Female", "Male", "Female", "Male"],
-            "DUPR_Rating": [4.722, 4.478, 4.963, 4.914, 4.920, 4.622, 4.434, 5.160]
-        }
-        players_df = pd.DataFrame(sample_data)
-        st.dataframe(players_df)
+            display_dataframe_in_expander(st.expander("Uploaded Data"), players_df)
 
+    elif data_option == "Use Sample Data":
+        players_df = get_players_from_db()
+        display_dataframe_in_expander(st.expander("Sample Data"), players_df)
     else:
-        # Enter data manually
         st.write(f"**Enter player details:**")
-        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players", value=4)
+        num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players",
+                                      value=4)
         manual_data = []
         for i in range(int(num_players)):
-            st.write(f"**Player {i+1}**")
-            name = st.text_input(f"Name of Player {i+1}", key=f"name_{i}")
-            rating = st.number_input(f"DUPR Rating of Player {i+1}", min_value=0.0, step=0.01, key=f"rating_{i}")
-            gender = st.selectbox(f"Gender of Player {i+1}", options=["Male", "Female"], key=f"gender_{i}")
-            manual_data.append({"Name": name, "DUPR_Rating": rating, "Gender": gender})
+            st.write(f"**Player {i + 1}**")
+            name = st.text_input(f"Name of Player {i + 1}", key=f"name_{i}")
+            rating = st.number_input(f"DUPR Rating of Player {i + 1}", min_value=0.0, step=0.01, key=f"rating_{i}")
+            gender = st.selectbox(f"Gender of Player {i + 1}", options=["Male", "Female"], key=f"gender_{i}")
+            manual_data.append((name, gender, rating))
 
-        # Create DataFrame from manual input
-        players_df = pd.DataFrame(manual_data)
-        st.dataframe(players_df)
+        if st.button("Save Players"):
+            insert_players_into_db(manual_data)
+            st.success("Players saved to database.")
+            players_df = pd.DataFrame(manual_data, columns=["Name", "Gender", "DUPR_Rating"])
+            st.dataframe(players_df)
 
     if 'players_df' in locals():
-        # Add selection for team pairing option
         pairing_option = st.selectbox(
             "Select Team Pairing Option",
             ("Any Gender", "Mixed", "Gender")
