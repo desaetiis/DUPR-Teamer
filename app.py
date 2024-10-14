@@ -147,10 +147,7 @@ def display_dataframe_in_expander(expander, df):
 
 
 def main():
-    pickle_img = "pickleball.jpg"
-    st.logo(pickle_img)
-
-    st.title(f"Good Games🌕")
+    st.title(f"🌕Good Games")
 
     with st.expander(":blue[**About**]", expanded=False):
         st.markdown("""*Pickleball team optimizer for competitive rec play.*""")
