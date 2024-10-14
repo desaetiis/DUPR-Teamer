@@ -147,6 +147,7 @@ def display_dataframe_in_expander(expander, df):
 
 
 def main():
+    st.set_page_config(layout="centered", page_title="Good Games", page_icon="🌕")
     st.title(f"🌕 Good Games")
 
     with st.expander(":blue[**About**]", expanded=False):
