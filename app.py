@@ -146,9 +146,10 @@ def display_dataframe_in_expander(expander, df):
 
 
 def main():
-    st.title("Pickleball Team Matcher")
+    st.title("Good Games.")
 
     with st.expander(":blue[**About**]", expanded=False):
+        st.markdown("""*Pickleball team optimizer for competitive rec play.*""")
         st.info("This app helps create balanced pickleball teams based on player DUPR ratings.")
         st.markdown("""
         
