@@ -177,13 +177,13 @@ def main():
         uploaded_file = st.file_uploader("Upload CSV", type="csv")
         if uploaded_file:
             players_df = pd.read_csv(uploaded_file)
-            display_dataframe_in_expander(st.expander("**Uploaded Data**"), players_df)
+            display_dataframe_in_expander(st.expander("**View Uploaded Data**"), players_df)
 
     elif data_option == "Use Sample Data":
         players_df = get_players_from_db(sample_data=True)
-        display_dataframe_in_expander(st.expander("**Sample Data**"), players_df)
+        display_dataframe_in_expander(st.expander("**View Sample Data**"), players_df)
     else:
-        with st.expander(f"**Enter player details:**", expanded=True):
+        with st.expander(f"**Enter Player Details**", expanded=True):
             num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players",
                                           value=4)
             manual_data = []
@@ -199,7 +199,7 @@ def main():
             st.success("Players saved to database.")
 
         players_df = pd.DataFrame(manual_data, columns=["name", "gender", "dupr_rating"])
-        display_dataframe_in_expander(st.expander("**Saved Players**"), players_df)
+        display_dataframe_in_expander(st.expander("**View Saved Players**"), players_df)
 
     st.markdown("---")
 
