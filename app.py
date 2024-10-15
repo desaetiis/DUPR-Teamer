@@ -5,6 +5,7 @@ from pulp import pulp, LpProblem, LpMinimize, LpVariable, lpSum, LpBinary, value
 import contextlib
 import sqlite3
 
+st.set_page_config(layout="centered", page_title="Good Games", page_icon="🌕")
 
 
 def insert_players_into_db(players):
@@ -147,7 +148,6 @@ def display_dataframe_in_expander(expander, df):
 
 
 def main():
-    st.set_page_config(layout="centered", page_title="Good Games", page_icon="🌕")
     st.title(f"🌕 Good Games")
 
     with st.expander(":blue[**About**]", expanded=False):
@@ -169,21 +169,21 @@ def main():
     st.markdown("---")
 
     data_option = st.selectbox(
-        "How would you like to provide player data?",
+        ":blue[**How would you like to provide player data?**]",
         ("Enter Data Manually", "Upload CSV File", "Use Sample Data")
     )
 
     if data_option == "Upload CSV File":
-        uploaded_file = st.file_uploader("Upload CSV", type="csv")
+        uploaded_file = st.file_uploader(":blue[**Upload CSV**]", type="csv")
         if uploaded_file:
             players_df = pd.read_csv(uploaded_file)
-            display_dataframe_in_expander(st.expander("**View Uploaded Data**"), players_df)
+            display_dataframe_in_expander(st.expander("**:blue[View Uploaded Data]**"), players_df)
 
     elif data_option == "Use Sample Data":
         players_df = get_players_from_db(sample_data=True)
-        display_dataframe_in_expander(st.expander("**View Sample Data**"), players_df)
+        display_dataframe_in_expander(st.expander("**:blue[View Sample Data]**"), players_df)
     else:
-        with st.expander(f"**Enter Player Details**", expanded=True):
+        with st.expander(f"**:blue[Enter Player Details]**", expanded=True):
             num_players = st.number_input("Number of players (must be even):", min_value=2, step=1, key="num_players",
                                           value=4)
             manual_data = []
@@ -194,24 +194,25 @@ def main():
                 gender = st.selectbox(f"Gender of Player {i + 1}", options=["Male", "Female"], key=f"gender_{i}")
                 manual_data.append((name, gender, rating))
 
-        if st.button("Save Players"):
+        if st.button(":red[Save Players]", key="save_players"):
             insert_players_into_db(manual_data)
             st.success("Players saved to database.")
 
         players_df = pd.DataFrame(manual_data, columns=["name", "gender", "dupr_rating"])
-        display_dataframe_in_expander(st.expander("**View Saved Players**"), players_df)
+        display_dataframe_in_expander(st.expander("**:blue[View Saved Players]**"), players_df)
 
     st.markdown("---")
 
     if 'players_df' in locals():
         pairing_option = st.selectbox(
-            "Select Team Pairing Option",
+            ":blue[**Select Team Pairing Option**]",
             ("Any Gender", "Mixed", "Gender")
         )
 
         if len(players_df) % 2 != 0:
             st.error("The number of players must be even.")
         else:
+            # Solve and display the player data
             if st.button("Generate Teams",
                          key="generate_teams",
                          help="Click to generate optimal teams.",
@@ -223,7 +224,7 @@ def main():
                     teams = teams.sort_values(by=['Gender Composition'])
 
                 if teams is not None:
-                    st.write("**Optimal Teams:**")
+                    st.write(":blue[**Optimal Teams:**]")
                     st.dataframe(teams)
                 else:
                     st.error("An error occurred while generating teams.")
