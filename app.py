@@ -5,7 +5,7 @@ from pulp import pulp, LpProblem, LpMinimize, LpVariable, lpSum, LpBinary, value
 import contextlib
 import sqlite3
 
-st.set_page_config(layout="centered", page_title="Good Games", page_icon="🌕")
+st.set_page_config(layout="centered", page_title="pickle", page_icon="🌕")
 
 
 def insert_players_into_db(players):
