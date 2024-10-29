@@ -170,7 +170,7 @@ def main():
 
     data_option = st.selectbox(
         ":blue[**How would you like to provide player data?**]",
-        ("Enter Data Manually", "Upload CSV File", "Use Sample Data")
+        ("Enter Data Manually", "Upload CSV File", "Use Sample Data"), index=2
     )
 
     if data_option == "Upload CSV File":
